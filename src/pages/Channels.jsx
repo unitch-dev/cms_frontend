@@ -5,6 +5,12 @@ import ImageUploadField from "../components/ImageUploadField.jsx";
 import ChannelThumb from "../components/ChannelThumb.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import ViewModal from "../components/ViewModal.jsx";
+import StatusPill from "../components/StatusPill.jsx";
+import GenrePill from "../components/GenrePill.jsx";
+import TableSkeletonRows from "../components/TableSkeletonRows.jsx";
+import Pagination from "../components/Pagination.jsx";
+import { TableCard, TableHeaderRow, Th, Tr, EmptyState } from "../components/Table.jsx";
+import { ChannelIcon, GenreIcon, StatusIcon, IdIcon, ActionsIcon, SearchIcon, CloseIcon } from "../components/TableIcons.jsx";
 
 const DEVICE_OPTIONS = ["android", "ios", "web", "smart_tv"];
 const PAGE_SIZE = 15;
@@ -22,40 +28,23 @@ const emptyForm = {
   logo: null,
 };
 
-function StatusPill({ status }) {
-  const isActive = status === "active";
+/* ---------- Modern inline action icons/buttons ---------- */
+
+function EyeIcon() {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
-        isActive ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-red-500"}`} />
-      {isActive ? "Active" : "Inactive"}
-    </span>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
-function GenrePill({ text }) {
+function PencilIcon() {
   return (
-    <span className="inline-flex items-center rounded-full bg-[#E0F2FE] dark:bg-[#0EA5E9]/10 text-[#0369A1] dark:text-[#38BDF8] px-2.5 py-1 text-[11px] font-bold whitespace-nowrap">
-      {text}
-    </span>
-  );
-}
-
-function EditButton({ onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      title="Edit"
-      className="h-8 w-8 rounded-full flex items-center justify-center bg-[#0284C7] dark:bg-[#0EA5E9] text-white hover:opacity-90 active:scale-95 transition-all shrink-0"
-    >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793z" />
-        <path d="M11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-      </svg>
-    </button>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
   );
 }
 
@@ -64,41 +53,26 @@ function ViewButton({ onClick }) {
     <button
       onClick={onClick}
       title="View"
-      className="h-8 w-8 rounded-full flex items-center justify-center bg-violet-500 dark:bg-violet-500 text-white hover:opacity-90 active:scale-95 transition-all shrink-0"
+      className="h-8 w-8 rounded-full flex items-center justify-center bg-sky-100 text-sky-600 hover:bg-sky-600 hover:text-white dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500 dark:hover:text-white transition-colors active:scale-95"
     >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-        <path d="M10 3.5c-4.34 0-7.5 3.5-8.5 6.5 1 3 4.16 6.5 8.5 6.5s7.5-3.5 8.5-6.5c-1-3-4.16-6.5-8.5-6.5zm0 10.5a4 4 0 110-8 4 4 0 010 8z" />
-        <circle cx="10" cy="10" r="2" />
-      </svg>
+      <EyeIcon />
     </button>
   );
 }
 
-function RowSkeleton() {
+function EditButton({ onClick }) {
   return (
-    <tr>
-      <td className="px-5 py-4">
-        <div className="h-3.5 w-5 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-      </td>
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-          <div className="h-3.5 w-32 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-        </div>
-      </td>
-      <td className="px-5 py-4">
-        <div className="h-3.5 w-24 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-      </td>
-      <td className="px-5 py-4">
-        <div className="h-5 w-16 rounded-full bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-      </td>
-      <td className="px-5 py-4">
-        <div className="h-3.5 w-32 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
-      </td>
-      <td className="px-5 py-4" />
-    </tr>
+    <button
+      onClick={onClick}
+      title="Edit"
+      className="h-8 w-8 rounded-full flex items-center justify-center bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500 dark:hover:text-white transition-colors active:scale-95"
+    >
+      <PencilIcon />
+    </button>
   );
 }
+
+/* ---------------------------------------------------------- */
 
 export default function Channels() {
   const [channels, setChannels] = useState([]);
@@ -112,6 +86,7 @@ export default function Channels() {
   const [search, setSearch] = useState("");
   const [viewingChannel, setViewingChannel] = useState(null);
   const [page, setPage] = useState(1);
+  const [lcnSort, setLcnSort] = useState(null); // null | "asc" | "desc"
 
   const load = () => {
     setLoading(true);
@@ -186,8 +161,6 @@ export default function Channels() {
         desc: form.desc,
       };
       if (form.sequence !== "") payload.sequence = Number(form.sequence);
-      // Only send image fields when they're a freshly-picked File - an
-      // unchanged string URL means "leave the existing image as-is".
       if (form.channel_image instanceof File) payload.channel_image = form.channel_image;
       if (form.logo instanceof File) payload.logo = form.logo;
 
@@ -215,22 +188,30 @@ export default function Channels() {
     }
   };
 
-  const filtered = channels.filter((c) =>
-    c.channel_name?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = channels.filter((c) => c.channel_name?.toLowerCase().includes(search.toLowerCase()));
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const sorted = lcnSort
+    ? [...filtered].sort((a, b) => {
+        const av = a.sequence === "" || a.sequence == null ? Infinity : Number(a.sequence);
+        const bv = b.sequence === "" || b.sequence == null ? Infinity : Number(b.sequence);
+        return lcnSort === "asc" ? av - bv : bv - av;
+      })
+    : filtered;
+
+  const cycleLcnSort = () => {
+    setLcnSort((s) => (s === null ? "asc" : s === "asc" ? "desc" : null));
+  };
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const startIdx = (safePage - 1) * PAGE_SIZE;
-  const paginated = filtered.slice(startIdx, startIdx + PAGE_SIZE);
-  const rangeStart = filtered.length === 0 ? 0 : startIdx + 1;
-  const rangeEnd = Math.min(startIdx + PAGE_SIZE, filtered.length);
+  const paginated = sorted.slice(startIdx, startIdx + PAGE_SIZE);
+  const rangeStart = sorted.length === 0 ? 0 : startIdx + 1;
+  const rangeEnd = Math.min(startIdx + PAGE_SIZE, sorted.length);
 
   useEffect(() => {
     setPage(1);
   }, [search]);
-
-  const goToPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
   return (
     <div style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
@@ -255,17 +236,9 @@ export default function Channels() {
 
       <div className="mb-4">
         <div className="relative max-w-xs">
-          <svg
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500"
-          >
-            <path
-              fillRule="evenodd"
-              d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2">
+            <SearchIcon />
+          </span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -275,219 +248,91 @@ export default function Channels() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0F1729] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px] min-w-[720px]">
-            <thead>
-              <tr className="bg-gradient-to-r from-[#0284C7] to-[#38BDF8] dark:from-[#0369A1] dark:to-[#0EA5E9] text-left">
-                <th className="px-5 py-3.5 font-bold text-white w-12">#</th>
-                <th className="px-5 py-3.5 font-bold text-white">
-                  <span className="inline-flex items-center gap-1.5">
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-4 w-4">
-                      <rect x="3" y="4.5" width="14" height="12.5" rx="1.5" />
-                      <path d="M3 8.25h14M7 2.5v3M13 2.5v3" strokeLinecap="round" />
-                    </svg>
-                    Channel
-                  </span>
-                </th>
-                <th className="px-5 py-3.5 font-bold text-white">
-                  <span className="inline-flex items-center gap-1.5">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.5 3A1.5 1.5 0 003 4.5v4.379a1.5 1.5 0 00.44 1.06l7.914 7.915a1.5 1.5 0 002.122 0l4.378-4.378a1.5 1.5 0 000-2.122L9.94 3.439A1.5 1.5 0 008.878 3H4.5zM7 8a1 1 0 100-2 1 1 0 000 2z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Genre
-                  </span>
-                </th>
-                <th className="px-5 py-3.5 font-bold text-white">
-                  <span className="inline-flex items-center gap-1.5">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path d="M10 3a1 1 0 011 1v.09a6.97 6.97 0 013.982 1.87.75.75 0 01-1.03 1.092A5.47 5.47 0 0011 5.6V10a1 1 0 01-.4.8l-3 2.25a1 1 0 01-1.2-1.6l2.6-1.95V4a1 1 0 011-1z" />
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-1.5a6.5 6.5 0 100-13 6.5 6.5 0 000 13z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Status
-                  </span>
-                </th>
-                <th className="px-5 py-3.5 font-bold text-white">
-                  <span className="inline-flex items-center gap-1.5">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path
-                        fillRule="evenodd"
-                        d="M8 7a5 5 0 113.61 4.804l-1.903 1.903a1 1 0 01-.707.293H8v1a1 1 0 01-1 1H6v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a1 1 0 01.293-.707L8.196 8.39A5.02 5.02 0 018 7zm5-3a1 1 0 100 2 1 1 0 000-2z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Channel ID
-                  </span>
-                </th>
-                <th className="px-5 py-3.5 font-bold text-white text-right">
-                  <span className="inline-flex items-center gap-1.5 justify-end">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path
-                        fillRule="evenodd"
-                        d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567l-.179 1.072c-.02.12-.115.26-.297.348a7.493 7.493 0 00-.986.57c-.166.115-.334.126-.45.083l-1.019-.383a1.875 1.875 0 00-2.282.82L3.093 7.92a1.875 1.875 0 00.432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 000 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 00-.432 2.385l.922 1.597a1.875 1.875 0 002.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 002.28-.819l.923-1.597a1.875 1.875 0 00-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 000-1.139c-.016-.2.059-.352.153-.43l.84-.692a1.875 1.875 0 00.433-2.385l-.922-1.597a1.875 1.875 0 00-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 00-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 00-1.85-1.567h-1.843zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Actions
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && Array.from({ length: 8 }).map((_, i) => <RowSkeleton key={i} />)}
+      <TableCard minWidth="min-w-[800px]">
+        <TableHeaderRow>
+          <Th width="w-12">#</Th>
+          <Th icon={<ChannelIcon />}>Channel</Th>
+          <Th icon={<IdIcon />} width="w-20" sortDirection={lcnSort} onSort={cycleLcnSort}>
+            LCN
+          </Th>
+          <Th icon={<GenreIcon />}>Genre</Th>
+          <Th icon={<StatusIcon />}>Status</Th>
+          <Th icon={<IdIcon />}>Channel ID</Th>
+          <Th icon={<ActionsIcon />} align="right">
+            Actions
+          </Th>
+        </TableHeaderRow>
+        <tbody>
+          {loading && (
+            <TableSkeletonRows
+              count={8}
+              columns={["index", "avatar-text", "text", "text", "pill", "text", "actions"]}
+            />
+          )}
 
-              {!loading && filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center">
-                    <div className="text-[14px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">No channels found</div>
-                    <div className="text-[13px] font-medium text-neutral-400 dark:text-neutral-500 mb-4">
-                      {search ? "Try a different search term." : "Add your first channel to get started."}
+          {!loading && filtered.length === 0 && (
+            <EmptyState
+              colSpan={7}
+              title="No channels found"
+              subtitle={search ? "Try a different search term." : "Add your first channel to get started."}
+              actionLabel={!search ? "+ Add channel" : undefined}
+              onAction={openCreate}
+            />
+          )}
+
+          {!loading &&
+            paginated.map((c, i) => (
+              <Tr key={c.id} index={i}>
+                <td className="px-5 py-3.5 font-bold text-neutral-400 dark:text-neutral-500">{startIdx + i + 1}</td>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <ChannelThumb src={c.logo || c.channel_image} name={c.channel_name} />
+                    <div>
+                      <div className="font-bold text-neutral-900 dark:text-white">{c.channel_name}</div>
+                      <div className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">HD Channel</div>
                     </div>
-                    {!search && (
-                      <button
-                        onClick={openCreate}
-                        className="rounded-full bg-neutral-900 text-white text-[13px] font-bold px-5 py-2.5 hover:opacity-90 transition-opacity"
-                      >
-                        + Add channel
-                      </button>
+                  </div>
+                </td>
+                <td className="px-5 py-3.5 font-bold text-neutral-500 dark:text-neutral-400">
+                  {c.sequence ?? "—"}
+                </td>
+                <td className="px-5 py-3.5">
+                  <div className="flex flex-wrap gap-1.5">
+                    {genreName(c.genre_id).length > 0 ? (
+                      genreName(c.genre_id).map((name) => <GenrePill key={name} text={name} />)
+                    ) : (
+                      <span className="text-neutral-400 dark:text-neutral-500">—</span>
                     )}
-                  </td>
-                </tr>
-              )}
+                  </div>
+                </td>
+                <td className="px-5 py-3.5">
+                  <StatusPill status={c.status} />
+                </td>
+                <td className="px-5 py-3.5 font-medium text-neutral-500 dark:text-neutral-400 max-w-[220px] truncate">
+                  {c.channel_id ? String(c.channel_id) : "—"}
+                </td>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center justify-end gap-2">
+                    <ViewButton onClick={() => setViewingChannel(c)} />
+                    <EditButton onClick={() => openEdit(c)} />
+                  </div>
+                </td>
+              </Tr>
+            ))}
+        </tbody>
+      </TableCard>
 
-              {!loading &&
-                paginated.map((c, i) => (
-                  <tr
-                    key={c.id}
-                    className={`group transition-colors ${
-                      i % 2 === 0
-                        ? "bg-white dark:bg-[#0F1729]"
-                        : "bg-[#F0F9FF] dark:bg-neutral-800/40"
-                    } hover:bg-[#E0F2FE] dark:hover:bg-neutral-800/70`}
-                  >
-                    <td className="px-5 py-3.5 font-bold text-neutral-400 dark:text-neutral-500">
-                      {startIdx + i + 1}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <ChannelThumb src={c.logo || c.channel_image} name={c.channel_name} />
-                        <div>
-                          <div className="font-bold text-neutral-900 dark:text-white">{c.channel_name}</div>
-                          <div className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">HD Channel</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex flex-wrap gap-1.5">
-                        {genreName(c.genre_id).length > 0 ? (
-                          genreName(c.genre_id).map((name) => <GenrePill key={name} text={name} />)
-                        ) : (
-                          <span className="text-neutral-400 dark:text-neutral-500">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <StatusPill status={c.status} />
-                    </td>
-                    <td className="px-5 py-3.5 font-medium text-neutral-500 dark:text-neutral-400 max-w-[220px] truncate">
-                      {c.channel_id ? String(c.channel_id) : "—"}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-2">
-                        <EditButton onClick={() => openEdit(c)} />
-                        <ViewButton onClick={() => setViewingChannel(c)} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-
-        {!loading && filtered.length > 0 && (
-          <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-t border-neutral-100 dark:border-neutral-800 flex-wrap">
-            <span className="text-[12px] font-medium text-neutral-400 dark:text-neutral-500 whitespace-nowrap">
-              Showing {rangeStart} to {rangeEnd} of {filtered.length} channels
-            </span>
-
-            {totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => goToPage(1)}
-                  disabled={safePage === 1}
-                  title="First page"
-                  className="inline-flex items-center gap-1 rounded-full border border-neutral-200 dark:border-neutral-700 h-9 px-3 text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                    <path
-                      fillRule="evenodd"
-                      d="M10.79 5.23a.75.75 0 01-.02 1.06L6.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02zm5 0a.75.75 0 01-.02 1.06L11.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={() => goToPage(safePage - 1)}
-                  disabled={safePage === 1}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 h-9 px-3.5 text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                    <path
-                      fillRule="evenodd"
-                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Prev
-                </button>
-
-                <span className="inline-flex items-center h-9 px-3.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-[13px] font-semibold text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
-                  Page {safePage} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() => goToPage(safePage + 1)}
-                  disabled={safePage === totalPages}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 h-9 px-3.5 text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  Next
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                    <path
-                      fillRule="evenodd"
-                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.25 4.25a.75.75 0 010 1.08l-4.25 4.25a.75.75 0 01-1.06-.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={() => goToPage(totalPages)}
-                  disabled={safePage === totalPages}
-                  title="Last page"
-                  className="inline-flex items-center gap-1 rounded-full border border-neutral-200 dark:border-neutral-700 h-9 px-3 text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.21 14.77a.75.75 0 01.02-1.06L8.168 10 4.23 6.29a.75.75 0 111.04-1.08l4.25 4.25a.75.75 0 010 1.08l-4.25 4.25a.75.75 0 01-1.06-.02zm5 0a.75.75 0 01.02-1.06L13.168 10 9.23 6.29a.75.75 0 111.04-1.08l4.25 4.25a.75.75 0 010 1.08l-4.25 4.25a.75.75 0 01-1.06-.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {!loading && filtered.length > 0 && (
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          totalItems={filtered.length}
+          itemLabel="channels"
+        />
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex justify-end">
@@ -513,9 +358,7 @@ export default function Channels() {
                 onClick={() => setShowForm(false)}
                 className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
+                <CloseIcon />
               </button>
             </div>
 
@@ -546,7 +389,7 @@ export default function Channels() {
                   required
                   value={form.channel_id}
                   onChange={(e) => setForm({ ...form, channel_id: e.target.value })}
-                  placeholder="e.g. sun_tv"
+                  placeholder="e.g. ID / URL"
                   className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 px-3.5 py-2.5 text-[14px] font-medium outline-none focus:border-[#0284C7] dark:focus:border-[#0EA5E9] focus:bg-white dark:bg-[#0F1729] transition-colors"
                 />
               </div>
@@ -561,7 +404,7 @@ export default function Channels() {
                       onClick={() => setForm({ ...form, status: s })}
                       className={`rounded-lg border px-3.5 py-2.5 text-[13px] font-semibold capitalize transition-colors ${
                         form.status === s
-                          ? "border-neutral-900 bg-neutral-900 text-white"
+                          ? "border-[#0284C7] dark:border-[#0EA5E9] bg-[#0284C7] dark:bg-[#0EA5E9] text-white"
                           : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                       }`}
                     >
@@ -583,7 +426,7 @@ export default function Channels() {
                       onClick={() => toggleGenre(g.id)}
                       className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                         form.genre_id.includes(g.id)
-                          ? "border-neutral-900 bg-neutral-900 text-white"
+                          ? "border-[#0284C7] dark:border-[#0EA5E9] bg-[#0284C7] dark:bg-[#0EA5E9] text-white"
                           : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                       }`}
                     >
@@ -608,7 +451,7 @@ export default function Channels() {
                       onClick={() => toggleDevice(d)}
                       className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold capitalize transition-colors ${
                         form.device.includes(d)
-                          ? "border-neutral-900 bg-neutral-900 text-white"
+                          ? "border-[#0284C7] dark:border-[#0EA5E9] bg-[#0284C7] dark:bg-[#0EA5E9] text-white"
                           : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                       }`}
                     >
@@ -715,10 +558,7 @@ export default function Channels() {
             { label: "Genres", value: genreName(viewingChannel.genre_id).join(", ") || "—" },
             {
               label: "Devices",
-              value:
-                viewingChannel.device?.length > 0
-                  ? viewingChannel.device.join(", ")
-                  : "—",
+              value: viewingChannel.device?.length > 0 ? viewingChannel.device.join(", ") : "—",
             },
             { label: "Sequence", value: viewingChannel.sequence ?? "—" },
             { label: "Description", value: viewingChannel.desc || "—" },

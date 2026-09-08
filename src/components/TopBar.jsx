@@ -42,6 +42,21 @@ export default function TopBar({ onOpenMobileMenu }) {
         </svg>
       </button>
 
+      <div className="hidden sm:flex items-center gap-3 rounded-full bg-[#F0F9FF] dark:bg-[#0EA5E9]/10 border border-[#E0F2FE] dark:border-[#0EA5E9]/20 pl-2 pr-4 py-1.5 shrink-0">
+        <div className="h-7 w-7 rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 20 20" fill="white" className="h-3.5 w-3.5 ml-0.5">
+            <path d="M6 4.5v11l9-5.5-9-5.5z" />
+          </svg>
+        </div>
+        <span className="text-[14px] font-bold tracking-tight text-neutral-900 dark:text-white whitespace-nowrap">
+          Channel Manager
+        </span>
+        <span className="h-4 w-px bg-[#0284C7]/30 dark:bg-[#0EA5E9]/30 shrink-0" />
+        <span className="text-[13px] italic font-semibold text-[#0284C7] dark:text-[#38BDF8] whitespace-nowrap">
+          Connect. Manage. Stream.
+        </span>
+      </div>
+
       <div className="flex-1 max-w-md">
         <LiveClock />
       </div>

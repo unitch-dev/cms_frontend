@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as genresApi from "../api/genres";
+import * as channelsApi from "../api/channels";
+import ChannelThumb from "../components/ChannelThumb.jsx";
+import StatusPill from "../components/StatusPill.jsx";
 import PageHeader from "../components/PageHeader.jsx";
-import ViewModal from "../components/ViewModal.jsx";
+import { SearchIcon, CloseIcon } from "../components/TableIcons.jsx";
 
 const emptyForm = { name: "" };
 const PALETTE = [210, 355, 265, 30, 165, 320, 45, 200];
@@ -12,30 +15,81 @@ function hueFor(name) {
   return PALETTE[sum % PALETTE.length];
 }
 
+const THEMES = [
+  { from: "#FEF3C7", to: "#FDE68A", chip: "#F59E0B", text: "#92400E" }, // amber
+  { from: "#CCFBF1", to: "#99F6E4", chip: "#0D9488", text: "#115E59" }, // teal
+  { from: "#FFEDD5", to: "#FED7AA", chip: "#EA580C", text: "#9A3412" }, // orange
+  { from: "#FCE7F3", to: "#FBCFE8", chip: "#DB2777", text: "#9D174D" }, // pink
+  { from: "#EDE9FE", to: "#DDD6FE", chip: "#7C3AED", text: "#5B21B6" }, // violet
+  { from: "#DBEAFE", to: "#BFDBFE", chip: "#2563EB", text: "#1E40AF" }, // blue
+  { from: "#D1FAE5", to: "#A7F3D0", chip: "#059669", text: "#065F46" }, // emerald
+  { from: "#FEE2E2", to: "#FECACA", chip: "#DC2626", text: "#991B1B" }, // red
+];
+
+function themeFor(name) {
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
+  return THEMES[sum % THEMES.length];
+}
+
+function iconFor(name) {
+  const n = (name || "").toLowerCase();
+  if (n.includes("news")) return "🌐";
+  if (n.includes("sport")) return "⚽";
+  if (n.includes("kid")) return "🧒";
+  if (n.includes("devotional")) return "🙏";
+  if (n.includes("music")) return "🎵";
+  if (n.includes("regional")) return "🗺️";
+  if (n.includes("doordarshan")) return "📡";
+  if (n.includes("local")) return "📻";
+  if (n.includes("infotainment")) return "💡";
+  if (n.includes("english")) return "🏰";
+  if (n.includes("telugu")) return "🕌";
+  if (n.includes("malayalam")) return "🌴";
+  if (n.includes("kannada")) return "⛩️";
+  if (n.includes("hindi")) return "🚩";
+  if (n.includes("tamil")) return "🛕";
+  return "📺";
+}
+
+function channelGenreIds(channel) {
+  return Array.isArray(channel.genre_id) ? channel.genre_id : channel.genre_id != null ? [channel.genre_id] : [];
+}
+
 function CardSkeleton() {
   return (
     <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0F1729] p-5">
-      <div className="h-11 w-11 rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse mb-5" />
-      <div className="h-3.5 w-24 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+      <div className="h-12 w-12 rounded-full bg-neutral-100 dark:bg-neutral-800 animate-pulse mb-5" />
+      <div className="h-3.5 w-24 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse mb-2" />
+      <div className="h-3 w-16 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
     </div>
   );
 }
 
 export default function Genres() {
   const [genres, setGenres] = useState([]);
+  const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [viewingGenre, setViewingGenre] = useState(null);
+
+  // Genre -> channels modal
+  const [openGenre, setOpenGenre] = useState(null);
+  const [showAddPicker, setShowAddPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [addingBulk, setAddingBulk] = useState(false);
 
   const load = () => {
     setLoading(true);
-    genresApi
-      .getGenres()
-      .then((res) => setGenres(res.data.data))
+    Promise.all([genresApi.getGenres(), channelsApi.getChannels()])
+      .then(([genRes, chRes]) => {
+        setGenres(genRes.data.data);
+        setChannels(chRes.data.data);
+      })
       .catch(() => setError("Failed to load genres"))
       .finally(() => setLoading(false));
   };
@@ -85,6 +139,79 @@ export default function Genres() {
     }
   };
 
+  const channelsInGenre = (genreId) => channels.filter((c) => channelGenreIds(c).includes(genreId));
+
+  const openGenreChannels = (genre) => {
+    setOpenGenre(genre);
+    setShowAddPicker(false);
+    setPickerSearch("");
+    setSelectedIds(new Set());
+    setError(null);
+  };
+
+  const closeGenreModal = () => {
+    setOpenGenre(null);
+    setShowAddPicker(false);
+    setSelectedIds(new Set());
+  };
+
+  const currentGenreChannels = useMemo(
+    () => (openGenre ? channelsInGenre(openGenre.id) : []),
+    [openGenre, channels],
+  );
+  const currentGenreChannelIds = useMemo(
+    () => new Set(currentGenreChannels.map((c) => c.id)),
+    [currentGenreChannels],
+  );
+
+  const pickerChannels = channels.filter((c) => c.channel_name?.toLowerCase().includes(pickerSearch.toLowerCase()));
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkAdd = async () => {
+    if (!openGenre || selectedIds.size === 0) return;
+    setAddingBulk(true);
+    setError(null);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) => {
+          const channel = channels.find((c) => c.id === id);
+          if (!channel) return Promise.resolve();
+          const existingGenreIds = channelGenreIds(channel);
+          const genre_id = existingGenreIds.includes(openGenre.id)
+            ? existingGenreIds
+            : [...existingGenreIds, openGenre.id];
+          const payload = {
+            channel_name: channel.channel_name,
+            channel_id: channel.channel_id,
+            type: channel.type || "deeplink",
+            status: channel.status || "active",
+            genre_id,
+            device: channel.device || [],
+            desc: channel.desc || "",
+          };
+          if (channel.sequence != null && channel.sequence !== "") payload.sequence = Number(channel.sequence);
+          return channelsApi.updateChannel(channel.id, payload);
+        }),
+      );
+      const chRes = await channelsApi.getChannels();
+      setChannels(chRes.data.data);
+      setSelectedIds(new Set());
+      setShowAddPicker(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add channels");
+    } finally {
+      setAddingBulk(false);
+    }
+  };
+
   return (
     <div style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <PageHeader
@@ -100,14 +227,14 @@ export default function Genres() {
         }
       />
 
-      {error && (
+      {error && !openGenre && (
         <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-4 py-3 text-[13px] font-medium text-red-600 dark:text-red-400 mb-6">
           {error}
         </div>
       )}
 
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -130,59 +257,115 @@ export default function Genres() {
       )}
 
       {!loading && genres.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {genres.map((g) => {
-            const hue = hueFor(g.name);
+            const theme = themeFor(g.name);
+            const icon = iconFor(g.name);
+            const count = channelsInGenre(g.id).length;
             return (
               <div
                 key={g.id}
-                className="group relative rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0F1729] p-5 transition-all hover:border-neutral-300 hover:-translate-y-0.5"
+                onClick={() => openGenreChannels(g)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && openGenreChannels(g)}
+                className="group relative cursor-pointer overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+                style={{
+                  background: `linear-gradient(120deg, ${theme.from} 0%, ${theme.to} 100%)`,
+                  boxShadow: "0 1px 2px rgba(15,23,42,0.06)",
+                }}
               >
-                <div className="flex items-start justify-between mb-5">
+                {/* decorative watermark icon, bleeding off the top-right edge */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-3 -right-2 text-[64px] sm:text-[72px] leading-none opacity-80 rotate-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 select-none"
+                  style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.08))" }}
+                >
+                  {icon}
+                </span>
+
+                <div className="relative flex items-start gap-3 pr-8">
                   <div
-                    className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `hsl(${hue}, 70%, 96%)` }}
+                    className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105"
+                    style={{ backgroundColor: "rgba(255,255,255,0.65)" }}
                   >
-                    <span className="text-[15px] font-bold" style={{ color: `hsl(${hue}, 55%, 45%)` }}>
+                    <span className="text-[17px] font-extrabold" style={{ color: theme.chip }}>
                       {g.name.slice(0, 1).toUpperCase()}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openEdit(g)}
-                      title="Edit"
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all duration-200 hover:scale-110 active:scale-95"
+                  <div className="min-w-0 pt-0.5">
+                    <div
+                      className="text-[13px] sm:text-[14px] font-extrabold tracking-wide uppercase truncate"
+                      style={{ color: theme.text }}
                     >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-8.5 8.5a2 2 0 01-.708.464L4 16l.622-3.206a2 2 0 01.464-.708l8.5-8.5z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setViewingGenre(g)}
-                      title="View"
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:text-[#0284C7] dark:hover:text-[#38BDF8] hover:bg-[#0284C7]/10 dark:hover:bg-[#0EA5E9]/15 transition-all duration-200 hover:scale-110 active:scale-95"
-                    >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                        <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                      {g.name}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold mt-1" style={{ color: theme.text, opacity: 0.75 }}>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+                        <path d="M4 5a2 2 0 012-2h2.379a1 1 0 01.707.293l1.121 1.121A1 1 0 0010.914 4.5H14a2 2 0 012 2v.5H4V5z" />
                         <path
                           fillRule="evenodd"
-                          d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.147.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                          d="M2 8.5A1.5 1.5 0 013.5 7h13A1.5 1.5 0 0118 8.5V14a2 2 0 01-2 2H4a2 2 0 01-2-2V8.5z"
                           clipRule="evenodd"
                         />
                       </svg>
-                    </button>
+                      {count} {count === 1 ? "Channel" : "Channels"}
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-[14px] font-semibold text-neutral-900 dark:text-white truncate">{g.name}</div>
-                <div className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 mt-0.5">ID {g.id}</div>
+                {/* edit / delete — fade in on hover */}
+                <div
+                  className="absolute top-3 left-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => openEdit(g)}
+                    title="Edit"
+                    className="h-6 w-6 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-amber-600 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-8.5 8.5a2 2 0 01-.708.464L4 16l.622-3.206a2 2 0 01.464-.708l8.5-8.5z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(g.id)}
+                    title="Delete"
+                    className="h-6 w-6 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-red-500 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                      <path
+                        fillRule="evenodd"
+                        d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* open-channel affordance, bottom-right */}
+                <div className="relative flex justify-end mt-4 sm:mt-6">
+                  <span
+                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5"
+                    style={{ backgroundColor: "rgba(255,255,255,0.85)", color: theme.chip }}
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
+                      <path
+                        fillRule="evenodd"
+                        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
+      {/* Create / edit genre drawer */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
@@ -197,6 +380,7 @@ export default function Genres() {
             <style>{`
               @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
               @keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+              @keyframes popIn { from { opacity: 0; transform: scale(0.96) translateY(8px) } to { opacity: 1; transform: scale(1) translateY(0) } }
             `}</style>
 
             <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 dark:border-neutral-800">
@@ -207,14 +391,12 @@ export default function Genres() {
                 onClick={() => setShowForm(false)}
                 className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
+                <CloseIcon />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-              {error && (
+              {error && showForm && (
                 <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-3.5 py-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
                   {error}
                 </div>
@@ -234,15 +416,10 @@ export default function Genres() {
                 <div className="text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">Preview</div>
                 <div className="flex items-center gap-3 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 px-3.5 py-3">
                   <div
-                    className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `hsl(${hueFor(form.name || "?")}, 70%, 92%)` }}
+                    className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: `linear-gradient(135deg, hsl(${hueFor(form.name || "?")},75%,55%) 0%, hsl(${hueFor(form.name || "?") + 25},75%,45%) 100%)` }}
                   >
-                    <span
-                      className="text-[13px] font-bold"
-                      style={{ color: `hsl(${hueFor(form.name || "?")}, 55%, 40%)` }}
-                    >
-                      {(form.name || "?").slice(0, 1).toUpperCase()}
-                    </span>
+                    <span className="text-[13px] font-bold text-white">{(form.name || "?").slice(0, 1).toUpperCase()}</span>
                   </div>
                   <span className="text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
                     {form.name || "Genre name"}
@@ -287,20 +464,173 @@ export default function Genres() {
         </div>
       )}
 
-      {viewingGenre && (
-        <ViewModal
-          title={viewingGenre.name}
-          subtitle={`Genre ID ${viewingGenre.id}`}
-          fields={[
-            { label: "Name", value: viewingGenre.name },
-            { label: "ID", value: viewingGenre.id },
-          ]}
-          onClose={() => setViewingGenre(null)}
-          onEdit={() => {
-            setViewingGenre(null);
-            openEdit(viewingGenre);
-          }}
-        />
+      {/* Genre channels modal: shows channels in genre, + Add channels picker with multi-select */}
+      {openGenre && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            style={{ animation: "fadeIn 180ms ease-out" }}
+            onClick={closeGenreModal}
+          />
+          <div
+            className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-[#0F1729] border border-neutral-200 dark:border-neutral-700"
+            style={{ animation: "popIn 200ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            <style>{`
+              @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes popIn { from { opacity: 0; transform: scale(0.96) translateY(8px) } to { opacity: 1; transform: scale(1) translateY(0) } }
+            `}</style>
+
+            <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${hueFor(openGenre.name)},75%,55%) 0%, hsl(${hueFor(openGenre.name) + 25},75%,45%) 100%)`,
+                  }}
+                >
+                  <span className="text-[13px] font-bold text-white">{openGenre.name.slice(0, 1).toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-[16px] font-bold text-neutral-900 dark:text-white truncate">{openGenre.name}</h2>
+                  <p className="text-[12px] font-medium text-neutral-400 dark:text-neutral-500">
+                    {currentGenreChannels.length} {currentGenreChannels.length === 1 ? "channel" : "channels"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeGenreModal}
+                className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {!showAddPicker ? (
+              <>
+                <div className="flex-1 overflow-y-auto px-4 py-3">
+                  {error && (
+                    <div className="mx-2 mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-3.5 py-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
+                      {error}
+                    </div>
+                  )}
+                  {currentGenreChannels.length === 0 && (
+                    <div className="px-4 py-10 text-center">
+                      <div className="text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
+                        No channels in this genre yet
+                      </div>
+                      <div className="text-[12px] font-medium text-neutral-400 dark:text-neutral-500">
+                        Add channels from your channel list to feature them here.
+                      </div>
+                    </div>
+                  )}
+                  {currentGenreChannels.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                    >
+                      <ChannelThumb src={c.logo || c.channel_image} name={c.channel_name} />
+                      <span className="flex-1 min-w-0 truncate text-[13px] font-semibold text-neutral-800 dark:text-neutral-100">
+                        {c.channel_name}
+                      </span>
+                      <StatusPill status={c.status} />
+                    </div>
+                  ))}
+                </div>
+                <div className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                  <button
+                    onClick={() => {
+                      setShowAddPicker(true);
+                      setPickerSearch("");
+                      setSelectedIds(new Set());
+                      setError(null);
+                    }}
+                    className="w-full rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white text-[13px] font-bold py-2.5 hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    + Add channels
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-5 pt-4 pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <SearchIcon />
+                    </span>
+                    <input
+                      autoFocus
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      placeholder="Search channels…"
+                      className="w-full rounded-full border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 pl-9 pr-4 py-2 text-[13px] font-medium text-neutral-700 dark:text-neutral-200 outline-none focus:border-[#0284C7] dark:focus:border-[#0EA5E9] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="mx-5 mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-3.5 py-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto px-2 py-2">
+                  {pickerChannels.length === 0 && (
+                    <div className="px-5 py-10 text-center text-[13px] font-medium text-neutral-400">
+                      No channels match your search.
+                    </div>
+                  )}
+                  {pickerChannels.map((c) => {
+                    const alreadyIn = currentGenreChannelIds.has(c.id);
+                    const checked = alreadyIn || selectedIds.has(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                          alreadyIn ? "opacity-60 cursor-default" : "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={alreadyIn}
+                          onChange={() => !alreadyIn && toggleSelect(c.id)}
+                          className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600 text-[#0284C7] dark:text-[#0EA5E9] focus:ring-[#0284C7] dark:focus:ring-[#0EA5E9] accent-[#0284C7] dark:accent-[#0EA5E9] shrink-0"
+                        />
+                        <ChannelThumb src={c.logo || c.channel_image} name={c.channel_name} />
+                        <span className="flex-1 min-w-0 truncate text-[13px] font-semibold text-neutral-800 dark:text-neutral-100">
+                          {c.channel_name}
+                        </span>
+                        {alreadyIn && (
+                          <span className="shrink-0 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                            Added
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between gap-2.5 px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPicker(false)}
+                    className="rounded-full border border-neutral-200 dark:border-neutral-700 px-5 py-2.5 text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleBulkAdd}
+                    disabled={selectedIds.size === 0 || addingBulk}
+                    className="rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white disabled:opacity-50 px-5 py-2.5 text-[13px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    {addingBulk ? "Adding…" : `Add ${selectedIds.size > 0 ? selectedIds.size : ""} channel${selectedIds.size === 1 ? "" : "s"}`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
