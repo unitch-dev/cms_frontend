@@ -32,26 +32,6 @@ function themeFor(name) {
   return THEMES[sum % THEMES.length];
 }
 
-function iconFor(name) {
-  const n = (name || "").toLowerCase();
-  if (n.includes("news")) return "🌐";
-  if (n.includes("sport")) return "⚽";
-  if (n.includes("kid")) return "🧒";
-  if (n.includes("devotional")) return "🙏";
-  if (n.includes("music")) return "🎵";
-  if (n.includes("regional")) return "🗺️";
-  if (n.includes("doordarshan")) return "📡";
-  if (n.includes("local")) return "📻";
-  if (n.includes("infotainment")) return "💡";
-  if (n.includes("english")) return "🏰";
-  if (n.includes("telugu")) return "🕌";
-  if (n.includes("malayalam")) return "🌴";
-  if (n.includes("kannada")) return "⛩️";
-  if (n.includes("hindi")) return "🚩";
-  if (n.includes("tamil")) return "🛕";
-  return "📺";
-}
-
 function channelGenreIds(channel) {
   return Array.isArray(channel.genre_id) ? channel.genre_id : channel.genre_id != null ? [channel.genre_id] : [];
 }
@@ -257,10 +237,9 @@ export default function Genres() {
       )}
 
       {!loading && genres.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
           {genres.map((g) => {
             const theme = themeFor(g.name);
-            const icon = iconFor(g.name);
             const count = channelsInGenre(g.id).length;
             return (
               <div
@@ -269,40 +248,39 @@ export default function Genres() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && openGenreChannels(g)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+                className="group relative cursor-pointer overflow-hidden rounded-xl p-3 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
                 style={{
                   background: `linear-gradient(120deg, ${theme.from} 0%, ${theme.to} 100%)`,
                   boxShadow: "0 1px 2px rgba(15,23,42,0.06)",
                 }}
               >
-                {/* decorative watermark icon, bleeding off the top-right edge */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -top-3 -right-2 text-[64px] sm:text-[72px] leading-none opacity-80 rotate-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 select-none"
-                  style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.08))" }}
-                >
-                  {icon}
-                </span>
-
-                <div className="relative flex items-start gap-3 pr-8">
+                <div className="relative flex items-start gap-2">
                   <div
-                    className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105"
+                    className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundColor: "rgba(255,255,255,0.65)" }}
                   >
-                    <span className="text-[17px] font-extrabold" style={{ color: theme.chip }}>
+                    <span className="text-[13px] font-extrabold" style={{ color: theme.chip }}>
                       {g.name.slice(0, 1).toUpperCase()}
                     </span>
                   </div>
 
                   <div className="min-w-0 pt-0.5">
                     <div
-                      className="text-[13px] sm:text-[14px] font-extrabold tracking-wide uppercase truncate"
+                      className="text-[11px] font-extrabold tracking-wide uppercase truncate"
                       style={{ color: theme.text }}
                     >
                       {g.name}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold mt-1" style={{ color: theme.text, opacity: 0.75 }}>
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 shrink-0">
+                    {g.genre_code && (
+                      <div
+                        className="inline-flex items-center mt-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+                        style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
+                      >
+                        {g.genre_code}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 text-[10px] font-semibold mt-1" style={{ color: theme.text, opacity: 0.75 }}>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
                         <path d="M4 5a2 2 0 012-2h2.379a1 1 0 01.707.293l1.121 1.121A1 1 0 0010.914 4.5H14a2 2 0 012 2v.5H4V5z" />
                         <path
                           fillRule="evenodd"
@@ -317,24 +295,24 @@ export default function Genres() {
 
                 {/* edit / delete — fade in on hover */}
                 <div
-                  className="absolute top-3 left-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => openEdit(g)}
                     title="Edit"
-                    className="h-6 w-6 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-amber-600 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
+                    className="h-5 w-5 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-amber-600 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-8.5 8.5a2 2 0 01-.708.464L4 16l.622-3.206a2 2 0 01.464-.708l8.5-8.5z" />
                     </svg>
                   </button>
                   <button
                     onClick={() => handleDelete(g.id)}
                     title="Delete"
-                    className="h-6 w-6 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-red-500 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
+                    className="h-5 w-5 rounded-md flex items-center justify-center text-neutral-500 bg-white/70 hover:bg-white hover:text-red-500 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
                       <path
                         fillRule="evenodd"
                         d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4z"
@@ -345,12 +323,12 @@ export default function Genres() {
                 </div>
 
                 {/* open-channel affordance, bottom-right */}
-                <div className="relative flex justify-end mt-4 sm:mt-6">
+                <div className="relative flex justify-end mt-2">
                   <span
-                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5"
+                    className="h-5 w-5 rounded-full flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5"
                     style={{ backgroundColor: "rgba(255,255,255,0.85)", color: theme.chip }}
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 sm:h-4 sm:w-4">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
                       <path
                         fillRule="evenodd"
                         d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
@@ -494,6 +472,7 @@ export default function Genres() {
                 <div className="min-w-0">
                   <h2 className="text-[16px] font-bold text-neutral-900 dark:text-white truncate">{openGenre.name}</h2>
                   <p className="text-[12px] font-medium text-neutral-400 dark:text-neutral-500">
+                    {openGenre.genre_code ? `${openGenre.genre_code} · ` : ""}
                     {currentGenreChannels.length} {currentGenreChannels.length === 1 ? "channel" : "channels"}
                   </p>
                 </div>

@@ -11,6 +11,8 @@ import TableSkeletonRows from "../components/TableSkeletonRows.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { TableCard, TableHeaderRow, Th, Tr, EmptyState } from "../components/Table.jsx";
 import { ChannelIcon, GenreIcon, StatusIcon, IdIcon, ActionsIcon, SearchIcon, CloseIcon } from "../components/TableIcons.jsx";
+import BulkUploadChannelModal from "../components/BulkUploadChannelModal.jsx";
+import BulkUploadImageModal from "../components/BulkUploadImageModal.jsx";
 
 const DEVICE_OPTIONS = ["android", "ios", "web", "smart_tv"];
 const PAGE_SIZE = 15;
@@ -44,6 +46,29 @@ function PencilIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function ImagesIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="14" height="14" rx="2" />
+      <path d="M7 21h10a2 2 0 0 0 2-2V7" />
+      <circle cx="8" cy="8" r="1.5" />
+      <path d="m3 15 3.5-3.5a1 1 0 0 1 1.4 0L11 14.5" />
+    </svg>
+  );
+}
+
+function FileSpreadsheetIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h8" />
+      <path d="M8 17h8" />
+      <path d="M8 9h1" />
     </svg>
   );
 }
@@ -87,6 +112,8 @@ export default function Channels() {
   const [viewingChannel, setViewingChannel] = useState(null);
   const [page, setPage] = useState(1);
   const [lcnSort, setLcnSort] = useState(null); // null | "asc" | "desc"
+  const [showBulkChannel, setShowBulkChannel] = useState(false);
+  const [showBulkImage, setShowBulkImage] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -219,12 +246,32 @@ export default function Channels() {
         title="Channels"
         subtitle="Manage, configure and monitor all available channels."
         action={
-          <button
-            onClick={openCreate}
-            className="rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white text-[13px] font-bold px-5 py-2.5 hover:opacity-90 hover:shadow-lg active:scale-[0.98] transition-all"
-          >
-            + Add channel
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowBulkImage(true)}
+              className="group flex items-center gap-1.5 rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white text-[13px] font-bold px-4 py-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-200"
+            >
+              <span className="transition-transform duration-200 group-hover:scale-110">
+                <ImagesIcon />
+              </span>
+              Bulk upload images
+            </button>
+            <button
+              onClick={() => setShowBulkChannel(true)}
+              className="group flex items-center gap-1.5 rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white text-[13px] font-bold px-4 py-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-200"
+            >
+              <span className="transition-transform duration-200 group-hover:scale-110">
+                <FileSpreadsheetIcon />
+              </span>
+              Bulk upload channels
+            </button>
+            <button
+              onClick={openCreate}
+              className="rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white text-[13px] font-bold px-5 py-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-200"
+            >
+              + Add channel
+            </button>
+          </div>
         }
       />
 
@@ -568,6 +615,19 @@ export default function Channels() {
             setViewingChannel(null);
             openEdit(viewingChannel);
           }}
+        />
+      )}
+
+      {showBulkChannel && (
+        <BulkUploadChannelModal
+          onClose={() => setShowBulkChannel(false)}
+          onSuccess={load}
+        />
+      )}
+
+      {showBulkImage && (
+        <BulkUploadImageModal
+          onClose={() => setShowBulkImage(false)}
         />
       )}
     </div>

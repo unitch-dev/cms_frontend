@@ -20,3 +20,10 @@ export function updateChannel(id, fields) {
 export function deleteChannel(id) {
   return api.delete(`/channels/${id}`);
 }
+export function bulkUploadChannels(formData) {
+  return api.post("/channels/bulk-upload", formData);
+}
+
+export function bulkUploadImages(formData) {
+  return api.post("/channels/bulk-image-upload", formData);
+}
