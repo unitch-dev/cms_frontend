@@ -9,12 +9,6 @@ function initials(name) {
     .toUpperCase();
 }
 
-/**
- * Shows the channel's logo/image, but actually falls back to initials
- * (not just a blank box) when the image 404s or fails to load - tracked
- * with state instead of directly hiding the <img> in onError, since
- * hiding it alone leaves an empty square with no text.
- */
 export default function ChannelThumb({ src, name, size = "h-9 w-9" }) {
   const [failed, setFailed] = useState(false);
   const showImage = src && !failed;

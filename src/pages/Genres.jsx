@@ -6,7 +6,7 @@ import StatusPill from "../components/StatusPill.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { SearchIcon, CloseIcon } from "../components/TableIcons.jsx";
 
-const emptyForm = { name: "" };
+const emptyForm = { name: "", genre_sequence: "" };
 const PALETTE = [210, 355, 265, 30, 165, 320, 45, 200];
 
 function hueFor(name) {
@@ -85,20 +85,27 @@ export default function Genres() {
 
   const openEdit = (genre) => {
     setEditingId(genre.id);
-    setForm({ name: genre.name });
+    setForm({ name: genre.name, genre_sequence: genre.genre_sequence ?? "" });
     setError(null);
     setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (form.genre_sequence === "" || form.genre_sequence === null || form.genre_sequence === undefined) {
+      setError("Sequence number is required");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
+      const payload = { ...form, genre_sequence: Number(form.genre_sequence) };
       if (editingId) {
-        await genresApi.updateGenre(editingId, form);
+        await genresApi.updateGenre(editingId, payload);
       } else {
-        await genresApi.createGenre(form);
+        await genresApi.createGenre(payload);
       }
       setShowForm(false);
       load();
@@ -248,7 +255,7 @@ export default function Genres() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && openGenreChannels(g)}
-                className="group relative cursor-pointer overflow-hidden rounded-xl p-3 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+                className="group relative cursor-pointer overflow-hidden rounded-xl p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
                 style={{
                   background: `linear-gradient(120deg, ${theme.from} 0%, ${theme.to} 100%)`,
                   boxShadow: "0 1px 2px rgba(15,23,42,0.06)",
@@ -256,7 +263,7 @@ export default function Genres() {
               >
                 <div className="relative flex items-start gap-2">
                   <div
-                    className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105"
+                    className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundColor: "rgba(255,255,255,0.65)" }}
                   >
                     <span className="text-[13px] font-extrabold" style={{ color: theme.chip }}>
@@ -271,14 +278,24 @@ export default function Genres() {
                     >
                       {g.name}
                     </div>
-                    {g.genre_code && (
-                      <div
-                        className="inline-flex items-center mt-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
-                        style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
-                      >
-                        {g.genre_code}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 mt-1 flex-wrap">
+                      {g.genre_code && (
+                        <div
+                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+                          style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
+                        >
+                          {g.genre_code}
+                        </div>
+                      )}
+                      {g.genre_sequence != null && (
+                        <div
+                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+                          style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
+                        >
+                          #{g.genre_sequence}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 text-[10px] font-semibold mt-1" style={{ color: theme.text, opacity: 0.75 }}>
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0">
                         <path d="M4 5a2 2 0 012-2h2.379a1 1 0 01.707.293l1.121 1.121A1 1 0 0010.914 4.5H14a2 2 0 012 2v.5H4V5z" />
@@ -379,14 +396,28 @@ export default function Genres() {
                   {error}
                 </div>
               )}
+
               <div>
                 <label className="block text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">Name</label>
                 <input
                   required
                   value={form.name}
-                  onChange={(e) => setForm({ name: e.target.value })}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 px-3.5 py-2.5 text-[14px] font-medium outline-none focus:border-[#0284C7] dark:focus:border-[#0EA5E9] focus:bg-white dark:bg-[#0F1729] transition-colors"
-                  placeholder="Sports"
+                  placeholder="Enter Genre Name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">Sequence number</label>
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  value={form.genre_sequence}
+                  onChange={(e) => setForm({ ...form, genre_sequence: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 px-3.5 py-2.5 text-[14px] font-medium outline-none focus:border-[#0284C7] dark:focus:border-[#0EA5E9] focus:bg-white dark:bg-[#0F1729] transition-colors"
+                  placeholder="Enter number"
                 />
               </div>
 
