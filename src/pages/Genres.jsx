@@ -56,6 +56,10 @@ export default function Genres() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Sequence-number conflict handling
+  const [conflictGenre, setConflictGenre] = useState(null);
+  const [shiftConfirm, setShiftConfirm] = useState(false);
+
   // Genre -> channels modal
   const [openGenre, setOpenGenre] = useState(null);
   const [showAddPicker, setShowAddPicker] = useState(false);
@@ -80,6 +84,8 @@ export default function Genres() {
     setEditingId(null);
     setForm(emptyForm);
     setError(null);
+    setConflictGenre(null);
+    setShiftConfirm(false);
     setShowForm(true);
   };
 
@@ -87,35 +93,168 @@ export default function Genres() {
     setEditingId(genre.id);
     setForm({ name: genre.name, genre_sequence: genre.genre_sequence ?? "" });
     setError(null);
+    setConflictGenre(null);
+    setShiftConfirm(false);
     setShowForm(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (form.genre_sequence === "" || form.genre_sequence === null || form.genre_sequence === undefined) {
-      setError("Sequence number is required");
-      return;
-    }
-
-    setSaving(true);
+  const handleSequenceChange = (value) => {
+    setForm({ ...form, genre_sequence: value });
+    setConflictGenre(null);
+    setShiftConfirm(false);
     setError(null);
-    try {
-      const payload = { ...form, genre_sequence: Number(form.genre_sequence) };
-      if (editingId) {
-        await genresApi.updateGenre(editingId, payload);
-      } else {
-        await genresApi.createGenre(payload);
-      }
-      setShowForm(false);
-      load();
-    } catch (err) {
-      setError(err.response?.data?.message || "Save failed");
-    } finally {
-      setSaving(false);
-    }
   };
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (
+    form.genre_sequence === "" ||
+    form.genre_sequence === null ||
+    form.genre_sequence === undefined
+  ) {
+    setError("Sequence number is required");
+    return;
+  }
+
+  const newSeq = Number(form.genre_sequence);
+
+  const currentGenre = editingId
+    ? genres.find((g) => g.id === editingId)
+    : null;
+
+  const oldSeq = currentGenre
+    ? Number(currentGenre.genre_sequence)
+    : null;
+
+  const clash = genres.find(
+    (g) =>
+      Number(g.genre_sequence) === newSeq &&
+      g.id !== editingId
+  );
+
+  if (clash && !shiftConfirm) {
+    setConflictGenre(clash);
+
+    setError(
+      editingId
+        ? `Sequence #${newSeq} is already assigned to "${clash.name}". Tick the checkbox to move it.`
+        : `Sequence #${newSeq} is already assigned to "${clash.name}". Tick the checkbox to move it and shift the remaining genres.`
+    );
+
+    return;
+  }
+
+  setSaving(true);
+  setError(null);
+
+  try {
+   
+    if (editingId) {
+      if (oldSeq === newSeq) {
+        await genresApi.updateGenre(editingId, {
+          ...form,
+          genre_sequence: newSeq,
+        });
+      } else {
+       
+        const reorderedGenres = [...genres]
+          .filter((g) => g.id !== editingId)
+          .sort(
+            (a, b) =>
+              Number(a.genre_sequence) -
+              Number(b.genre_sequence)
+          );
+
+        const targetIndex = Math.max(
+          0,
+          Math.min(newSeq - 1, reorderedGenres.length)
+        );
+
+        reorderedGenres.splice(targetIndex, 0, {
+          ...currentGenre,
+          ...form,
+          genre_sequence: newSeq,
+        });
+
+      
+        for (let i = 0; i < reorderedGenres.length; i++) {
+          const genre = reorderedGenres[i];
+
+          await genresApi.updateGenre(genre.id, {
+            name: genre.name,
+            genre_sequence: 100000 + i + 1,
+          });
+        }
+
+      
+        for (let i = 0; i < reorderedGenres.length; i++) {
+          const genre = reorderedGenres[i];
+
+          await genresApi.updateGenre(genre.id, {
+            name:
+              genre.id === editingId
+                ? form.name
+                : genre.name,
+
+            genre_sequence: i + 1,
+          });
+        }
+      }
+    }
+
+    else {
+      if (clash && shiftConfirm) {
+        const toShift = [...genres]
+          .filter(
+            (g) =>
+              Number(g.genre_sequence) >= newSeq
+          )
+          .sort(
+            (a, b) =>
+              Number(b.genre_sequence) -
+              Number(a.genre_sequence)
+          );
+
+        for (let i = 0; i < toShift.length; i++) {
+          const genre = toShift[i];
+
+          await genresApi.updateGenre(genre.id, {
+            name: genre.name,
+            genre_sequence: 200000 + i + 1,
+          });
+        }
+
+        for (let i = 0; i < toShift.length; i++) {
+          const genre = toShift[i];
+
+          await genresApi.updateGenre(genre.id, {
+            name: genre.name,
+            genre_sequence: newSeq + i + 1,
+          });
+        }
+      }
+      await genresApi.createGenre({
+        ...form,
+        genre_sequence: newSeq,
+      });
+    }
+    setShowForm(false);
+    setConflictGenre(null);
+    setShiftConfirm(false);
+
+    load();
+
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Save failed"
+    );
+  } finally {
+    setSaving(false);
+  }
+};
   const handleDelete = async (id) => {
     if (!confirm("Delete this genre? Channels referencing it may break.")) return;
     try {
@@ -214,7 +353,7 @@ export default function Genres() {
         }
       />
 
-      {error && !openGenre && (
+      {error && !openGenre && !showForm && (
         <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-4 py-3 text-[13px] font-medium text-red-600 dark:text-red-400 mb-6">
           {error}
         </div>
@@ -273,7 +412,7 @@ export default function Genres() {
 
                   <div className="min-w-0 pt-0.5">
                     <div
-                      className="text-[11px] font-extrabold tracking-wide uppercase truncate"
+                      className="text-[14px] font-extrabold tracking-wide uppercase truncate"
                       style={{ color: theme.text }}
                     >
                       {g.name}
@@ -281,7 +420,7 @@ export default function Genres() {
                     <div className="flex items-center gap-1 mt-1 flex-wrap">
                       {g.genre_code && (
                         <div
-                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tracking-wide"
                           style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
                         >
                           {g.genre_code}
@@ -289,7 +428,7 @@ export default function Genres() {
                       )}
                       {g.genre_sequence != null && (
                         <div
-                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide"
+                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tracking-wide"
                           style={{ backgroundColor: "rgba(255,255,255,0.6)", color: theme.text }}
                         >
                           #{g.genre_sequence}
@@ -415,11 +554,26 @@ export default function Genres() {
                   type="number"
                   min="1"
                   value={form.genre_sequence}
-                  onChange={(e) => setForm({ ...form, genre_sequence: e.target.value })}
+                  onChange={(e) => handleSequenceChange(e.target.value)}
                   className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 px-3.5 py-2.5 text-[14px] font-medium outline-none focus:border-[#0284C7] dark:focus:border-[#0EA5E9] focus:bg-white dark:bg-[#0F1729] transition-colors"
                   placeholder="Enter number"
                 />
               </div>
+
+              {conflictGenre && (
+                <label className="flex items-start gap-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shiftConfirm}
+                    onChange={(e) => setShiftConfirm(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 shrink-0"
+                  />
+                  <span className="text-[12.5px] font-medium text-amber-800 dark:text-amber-300 leading-snug">
+                    Move <strong>{conflictGenre.name}</strong> (currently #{conflictGenre.genre_sequence}) — and only the
+                    genres between it and the new position — so #{form.genre_sequence} becomes free for this genre.
+                  </span>
+                </label>
+              )}
 
               <div>
                 <div className="text-[13px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">Preview</div>
@@ -462,7 +616,7 @@ export default function Genres() {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={saving}
+                  disabled={saving || (conflictGenre && !shiftConfirm)}
                   className="rounded-full bg-[#0284C7] dark:bg-[#0EA5E9] text-white disabled:opacity-60 px-5 py-2.5 text-[13px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
                 >
                   {saving ? "Saving…" : "Save genre"}
