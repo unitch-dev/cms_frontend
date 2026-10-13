@@ -1,3 +1,4 @@
+import ModalCloseButton from "./ModalCloseButton.jsx";
 export default function ViewModal({ title, subtitle, images = [], fields = [], onClose, onEdit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -22,14 +23,7 @@ export default function ViewModal({ title, subtitle, images = [], fields = [], o
               <p className="text-[12px] font-medium text-neutral-400 dark:text-neutral-500 mt-0.5">{subtitle}</p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 001.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-            </svg>
-          </button>
+         <ModalCloseButton onClick={onClose} />
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
