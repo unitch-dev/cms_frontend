@@ -107,14 +107,14 @@ function AdViewModal({ ad, channelNames, genreNames, onClose, onEdit }) {
     ["Channels", channelNames.length ? channelNames.join(", ") : "All channels"],
     ["Genres", genreNames.length ? genreNames.join(", ") : "All genres"],
     ["Dates", ad.startDate || ad.endDate ? `${ad.startDate || "…"} → ${ad.endDate || "…"}` : "No restriction"],
-    ["Daily time", ad.startTime && ad.endTime ? `${ad.startTime} – ${ad.endTime}` : "All day"],
+   // ["Daily time", ad.startTime && ad.endTime ? `${ad.startTime} – ${ad.endTime}` : "All day"],
   ];
-  if (isVideo) {
-    rows.push(
-      ["Play at", `${ad.playAtSecond || 0}s`],
-      ["Duration", ad.durationSeconds ? `${ad.durationSeconds}s` : "Full video"]
-    );
-  }
+  // if (isVideo) {
+  //   rows.push(
+  //     ["Play at", `${ad.playAtSecond || 0}s`],
+  //     ["Duration", ad.durationSeconds ? `${ad.durationSeconds}s` : "Full video"]
+  //   );
+  // }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -579,17 +579,7 @@ export default function Advertisements() {
               {form.type === "video" && (
                 <>
                   <VideoUploadField value={form.video} onChange={(file) => set({ video: file })} />
-                  <div>
-                    <label className={labelCls}>
-                      Or video URL <span className="font-normal text-neutral-400">(optional, mp4 / m3u8 link)</span>
-                    </label>
-                    <input
-                      value={form.videoUrl}
-                      onChange={(e) => set({ videoUrl: e.target.value })}
-                      className={inputCls}
-                      placeholder="https://…"
-                    />
-                  </div>
+                 
                 </>
               )}
 
@@ -641,7 +631,7 @@ export default function Advertisements() {
                       className={inputCls}
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <label className={labelCls}>Daily start time</label>
                     <input
                       type="time"
@@ -649,8 +639,8 @@ export default function Advertisements() {
                       onChange={(e) => set({ startTime: e.target.value })}
                       className={inputCls}
                     />
-                  </div>
-                  <div>
+                  </div> */}
+                  {/* <div>
                     <label className={labelCls}>Daily end time</label>
                     <input
                       type="time"
@@ -658,10 +648,10 @@ export default function Advertisements() {
                       onChange={(e) => set({ endTime: e.target.value })}
                       className={inputCls}
                     />
-                  </div>
+                  </div> */}
                   {isVideoForm && (
                     <>
-                      <div>
+                      {/* <div>
                         <label className={labelCls}>Play at (sec)</label>
                         <input
                           type="number"
@@ -671,8 +661,8 @@ export default function Advertisements() {
                           className={inputCls}
                           placeholder="0"
                         />
-                      </div>
-                      <div>
+                      </div> */}
+                      {/* <div>
                         <label className={labelCls}>Duration (sec)</label>
                         <input
                           type="number"
@@ -682,7 +672,7 @@ export default function Advertisements() {
                           className={inputCls}
                           placeholder="0 = full"
                         />
-                      </div>
+                      </div> */}
                     </>
                   )}
                 </div>
